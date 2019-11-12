@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -23,18 +22,15 @@ func main() {
 	count := 2
 	for index := 0; index < count; index++ {
 		data = make([]byte, 2048)
+
 		realLen, err := conn.Read(data)
 		if err != nil {
 			fmt.Println(err)
 		}
-
-		var num int32
 		bufferInt := 4
-		r := bytes.NewReader(data[:bufferInt])
-		binary.Read(r, binary.BigEndian, &num)
-
+		packageSize := binary.BigEndian.Uint32(data[:bufferInt])
 		// 匹配messageSize與實際封包數是否相同
-		if int32(realLen) != num {
+		if realLen != int(packageSize) {
 			// 處理理想與實際不同
 			fmt.Println("messageSize與實際封包數不同")
 			continue // 丟掉該封包
@@ -44,29 +40,35 @@ func main() {
 			fmt.Println("The robot messageType isn't equal MESSAGE_TYPE_ROBOT_STATE")
 			continue // 丟掉該封包
 		}
-		checkSize := 0
-		dataMap := make(map[int][]byte)
-		for wantBuffer := 0; bufferInt < realLen; {
-			bufferInt++ // show next number
-			subPackageType := int(data[bufferInt])
-			wantBuffer = bufferInt + 4
+
+		for {
+			fmt.Println("\n*****")
+			bufferInt++
+			if bufferInt >= realLen {
+				fmt.Println("*** end!!! ***")
+				break
+			}
+			wantBuffer := bufferInt + 4
 			subPackageSize := binary.BigEndian.Uint32(data[bufferInt:wantBuffer])
-			bufferInt = wantBuffer
+			// bufferInt = wantBuffer
+			// fmt.Println(data[:realLen])
+			if subPackageSize > 1000 {
+				fmt.Println("*** Error! subPackageSize > 1000 ***")
+				fmt.Println(data[bufferInt:wantBuffer])
+				break
+			}
 
 			wantBuffer = bufferInt + int(subPackageSize)
-			dataMap[subPackageType] = data[bufferInt:wantBuffer]
-			bufferInt = wantBuffer
+			fmt.Println("subPackageSize: ", subPackageSize)
+			fmt.Println("bufferInt: ", bufferInt)
+			fmt.Println(data[bufferInt:wantBuffer])
+			fmt.Println("subPackageType: ", data[bufferInt:wantBuffer][4])
+			fmt.Println("subPackageSize equal real len: ", int(subPackageSize) == len(data[bufferInt:wantBuffer]))
+			bufferInt = wantBuffer - 1
 
-			fmt.Println(subPackageType)
-			checkSize += int(subPackageSize)
 		}
-		if checkSize != realLen {
-			fmt.Print("\n*** oh no... ***\n")
-			fmt.Println(data[:realLen])
-		}
-		// fmt.Println(dataMap[1])
 
-		fmt.Println()
+		// fmt.Println(data[:realLen])
 		// 釋放data資料
 		data = nil
 	}
