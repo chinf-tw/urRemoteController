@@ -14,12 +14,10 @@ func main() {
 	}
 	defer conn.Close()
 
-	// fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
-
-	// status, err := bufio.NewReader(conn).ReadString('\n')
-	// fmt.Println(status)
 	var data []byte
-	count := 2
+	count := 5
+	var dataMap = make(map[byte][]byte)
+	isTest := true
 	for index := 0; index < count; index++ {
 		data = make([]byte, 2048)
 
@@ -42,33 +40,40 @@ func main() {
 		}
 
 		for {
-			fmt.Println("\n*****")
+
 			bufferInt++
 			if bufferInt >= realLen {
-				fmt.Println("*** end!!! ***")
+				if isTest {
+					fmt.Println("*** end!!! ***")
+				}
+
 				break
 			}
 			wantBuffer := bufferInt + 4
 			subPackageSize := binary.BigEndian.Uint32(data[bufferInt:wantBuffer])
-			// bufferInt = wantBuffer
-			// fmt.Println(data[:realLen])
-			if subPackageSize > 1000 {
-				fmt.Println("*** Error! subPackageSize > 1000 ***")
+
+			if int(subPackageSize) > realLen {
+				fmt.Println("*** Error! subPackageSize > Robot packageSize ***")
 				fmt.Println(data[bufferInt:wantBuffer])
 				break
 			}
 
 			wantBuffer = bufferInt + int(subPackageSize)
-			fmt.Println("subPackageSize: ", subPackageSize)
-			fmt.Println("bufferInt: ", bufferInt)
-			fmt.Println(data[bufferInt:wantBuffer])
-			fmt.Println("subPackageType: ", data[bufferInt:wantBuffer][4])
-			fmt.Println("subPackageSize equal real len: ", int(subPackageSize) == len(data[bufferInt:wantBuffer]))
+
+			if isTest {
+				fmt.Println("\n*****")
+				fmt.Println("subPackageSize: ", subPackageSize)
+				fmt.Println("bufferInt: ", bufferInt)
+				fmt.Println("subPackageType: ", data[bufferInt:wantBuffer][4])
+				fmt.Println("subPackageSize equal real len: ", int(subPackageSize) == len(data[bufferInt:wantBuffer]))
+				fmt.Println(data[bufferInt:wantBuffer])
+			}
+
+			dataMap[data[bufferInt:wantBuffer][4]] = data[bufferInt:wantBuffer]
 			bufferInt = wantBuffer - 1
 
 		}
-
-		// fmt.Println(data[:realLen])
+		fmt.Println(dataMap[7])
 		// 釋放data資料
 		data = nil
 	}
