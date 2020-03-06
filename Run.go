@@ -37,6 +37,16 @@ type CommunicationsFloat64 struct {
 	RZ float64 `json:"RZ"`
 }
 
+// Add add all values
+func (source *CommunicationsFloat64) Add(target *CommunicationsFloat64) {
+	source.X += target.X
+	source.Y += target.Y
+	source.Z += target.Z
+	source.RX += target.RX
+	source.RY += target.RY
+	source.RZ += target.RZ
+}
+
 func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, communications CommunicationsFloat64, timeout time.Duration) ([]float64, error) {
 	var (
 		data        []byte
