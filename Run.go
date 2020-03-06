@@ -29,12 +29,12 @@ func GetRealtimeCommunicationsFormat(jsonFile string) (RealtimeCommunicationsFor
 }
 
 type CommunicationsFloat64 struct {
-	X  float64
-	Y  float64
-	Z  float64
-	RX float64
-	RY float64
-	RZ float64
+	X  float64 `json:"X"`
+	Y  float64 `json:"Y"`
+	Z  float64 `json:"Z"`
+	RX float64 `json:"RX"`
+	RY float64 `json:"RY"`
+	RZ float64 `json:"RZ"`
 }
 
 func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, communications CommunicationsFloat64, timeout time.Duration) ([]float64, error) {
