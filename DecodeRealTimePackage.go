@@ -1,4 +1,4 @@
-package DeCodeURInterface
+package urremoteController
 
 import (
 	"encoding/binary"

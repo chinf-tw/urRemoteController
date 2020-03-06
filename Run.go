@@ -1,4 +1,4 @@
-package DeCodeURInterface
+package urremoteController
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"strconv"
+	"time"
 )
 
 var (
@@ -36,7 +37,7 @@ type CommunicationsFloat64 struct {
 	RZ float64
 }
 
-func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, communications CommunicationsFloat64) error {
+func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, communications CommunicationsFloat64, timeout time.Duration) ([]float64, error) {
 	var (
 		data        []byte
 		err         error
@@ -44,14 +45,19 @@ func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, commun
 		actualposeI interface{}
 		str         = "p["
 	)
-	if data, err = read(conn, rCFormat); err != nil {
-		return err
+	if data, err = read(conn, rCFormat, timeout); err != nil {
+		return nil, err
 	}
 	toolVectorActual := rCFormat["Tool vector actual"]
-	toolVectorActual.SetData(data[toolVectorActual.BeginIndex : toolVectorActual.BeginIndex+toolVectorActual.DataSize])
+	begin := toolVectorActual.BeginIndex
+	end := toolVectorActual.BeginIndex + toolVectorActual.DataSize
+	if len(data) < end {
+		return nil, fmt.Errorf("Error: data length: %d less than toolVectorActual end index: %d", len(data), end)
+	}
+	toolVectorActual.SetData(data[begin:end])
 
 	if actualposeI, err = toolVectorActual.Output(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// 轉換型別
@@ -59,17 +65,17 @@ func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, commun
 	case []float64:
 		actualpose = actualposeI.([]float64)
 		if len(actualpose) != toolVectorActual.NumberOfValues {
-			return fmt.Errorf("Error: actualpose is not match toolVectorActual.NumberOfValues")
+			return nil, fmt.Errorf("Error: actualpose is not match toolVectorActual.NumberOfValues")
 		}
 		actualpose = addCommunications(actualpose, communications)
 	default:
-		return fmt.Errorf("Error: target interface type is not a []float64")
+		return nil, fmt.Errorf("Error: target interface type is not a []float64")
 	}
 
 	for _, f := range actualpose {
 		s := strconv.FormatFloat(f, 'f', -1, 64)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		str += s + ","
 	}
@@ -78,18 +84,19 @@ func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, commun
 
 	moveStr := fmt.Sprintf("movej(%s)\n", str)
 	if _, err := conn.Write([]byte(moveStr)); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return actualpose, nil
 }
 
-func read(conn net.Conn, rCFormat RealtimeCommunicationsFormat) ([]byte, error) {
+func read(conn net.Conn, rCFormat RealtimeCommunicationsFormat, timeout time.Duration) ([]byte, error) {
 	var (
 		dataLen         int
 		err             error
 		targetInterface interface{}
 		targetLen       uint32
+		done            chan bool
 	)
 	var data = make([]byte, 2048)
 
@@ -97,7 +104,10 @@ func read(conn net.Conn, rCFormat RealtimeCommunicationsFormat) ([]byte, error) 
 		return nil, err
 	}
 
-	data = data[:dataLen]
+	// data = data[:dataLen]
+	if dataLen == 0 {
+		return nil, fmt.Errorf("Error: dataLen is 0")
+	}
 	messageSize := rCFormat["Message Size"]
 	messageSize.SetData(data[messageSize.BeginIndex:messageSize.DataSize])
 
@@ -112,9 +122,26 @@ func read(conn net.Conn, rCFormat RealtimeCommunicationsFormat) ([]byte, error) 
 	default:
 		return nil, fmt.Errorf("Error: target interface type is not a int")
 	}
-
+	go func() {
+		time.Sleep(timeout)
+		done <- true
+	}()
+	for int(targetLen) != dataLen {
+		if dataLen, err = conn.Read(data); err != nil {
+			return nil, err
+		}
+		select {
+		case <-done:
+			return nil, fmt.Errorf("Error: read UR data Timeout %d sec", timeout/time.Second)
+		default:
+		}
+	}
 	if int(targetLen) != dataLen {
-		return nil, DataNotMatchErr
+		return nil, fmt.Errorf("Error: int(targetLen) != dataLen")
+	}
+
+	if len(data) == 0 {
+		return nil, fmt.Errorf("Error: data is empty")
 	}
 
 	return data, nil
