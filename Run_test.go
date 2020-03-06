@@ -1,4 +1,4 @@
-package urremoteController
+package urRemoteController
 
 import (
 	"net"
