@@ -1,4 +1,4 @@
-module NTNU_Prj/DeCodeURInterface
+module github.com/chinf-tw/urRemoteController
 
 go 1.13
 
