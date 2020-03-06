@@ -1,0 +1,39 @@
+Meaning	Type	Number of values	Size in bytes	No
+Message Size	integer	1	4	1
+Time	double	1	8	2
+q target	double	6	48	3
+qd target	double	6	48	4
+qdd target	double	6	48	5
+I target	double	6	48	6
+M target	double	6	48	7
+q actual	double	6	48	8
+qd actual	double	6	48	9
+I actual	double	6	48	10
+I control	double	6	48	11
+Tool vector actual	double	6	48	12
+TCP speed actual	double	6	48	13
+TCP force	double	6	48	14
+Tool vector target	double	6	48	15
+TCP speed target	double	6	48	16
+Digital input bits	double	1	8	17
+Motor temperatures	double	6	48	18
+Controller Timer	double	1	8	19
+Test value	double	1	8	20
+Robot Mode	double	1	8	21
+Joint Modes	double	6	48	22
+Safety Mode	double	1	8	23
+	double	6	48	24
+Tool Accelerometer values	double	3	24	25
+	double	6	48	26
+Speed scaling	double	1	8	27
+Linear momentum norm	double	1	8	28
+	double	1	8	29
+	double	1	8	30
+V main	double	1	8	31
+V robot	double	1	8	32
+I robot	double	1	8	33
+V actual	double	6	48	34
+Digital outputs	double	1	8	35
+Program state	double	1	8	36
+Elbow position	double	3	24	37
+Elbow velocity	double	3	24	38
