@@ -13,6 +13,7 @@ var (
 	DataNotMatchErr error
 )
 
+// GetRealtimeCommunicationsFormat Get RealtimeCommunicationsFormat, RealtimeCommunicationsFormat is important with this package
 func GetRealtimeCommunicationsFormat(jsonFile string) (RealtimeCommunicationsFormat, error) {
 	var (
 		output RealtimeCommunicationsFormat
@@ -28,6 +29,7 @@ func GetRealtimeCommunicationsFormat(jsonFile string) (RealtimeCommunicationsFor
 	return output, nil
 }
 
+// CommunicationsFloat64 UR pose struct
 type CommunicationsFloat64 struct {
 	X  float64 `json:"X"`
 	Y  float64 `json:"Y"`
@@ -47,41 +49,22 @@ func (source *CommunicationsFloat64) Add(target *CommunicationsFloat64) {
 	source.RZ += target.RZ
 }
 
+// RunURWithMoveJ Using URScript with movej to remote control
 func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, communications CommunicationsFloat64, timeout time.Duration) ([]float64, error) {
 	var (
-		data        []byte
-		err         error
-		actualpose  []float64
-		actualposeI interface{}
-		str         = "p["
+		data       []byte
+		err        error
+		actualpose []float64
+		str        string
 	)
 	if data, err = read(conn, rCFormat, timeout); err != nil {
 		return nil, err
 	}
-	toolVectorActual := rCFormat["Tool vector actual"]
-	begin := toolVectorActual.BeginIndex
-	end := toolVectorActual.BeginIndex + toolVectorActual.DataSize
-	if len(data) < end {
-		return nil, fmt.Errorf("Error: data length: %d less than toolVectorActual end index: %d", len(data), end)
-	}
-	toolVectorActual.SetData(data[begin:end])
 
-	if actualposeI, err = toolVectorActual.Output(); err != nil {
+	if actualpose, err = DecodeActualPose(rCFormat, data); err != nil {
 		return nil, err
 	}
-
-	// 轉換型別
-	switch actualposeI.(type) {
-	case []float64:
-		actualpose = actualposeI.([]float64)
-		if len(actualpose) != toolVectorActual.NumberOfValues {
-			return nil, fmt.Errorf("Error: actualpose is not match toolVectorActual.NumberOfValues")
-		}
-		actualpose = addCommunications(actualpose, communications)
-	default:
-		return nil, fmt.Errorf("Error: target interface type is not a []float64")
-	}
-
+	actualpose = addCommunications(actualpose, communications)
 	if str, err = Float64ToPose(actualpose); err != nil {
 		return nil, err
 	}
@@ -181,4 +164,37 @@ func Float64ToPose(target []float64) (string, error) {
 	str = str[:len(str)-1]
 	str += "]"
 	return str, nil
+}
+
+// DecodeActualPose Deconde UR remote Control Protocol, data need to be all bytes
+func DecodeActualPose(rCFormat RealtimeCommunicationsFormat, data []byte) ([]float64, error) {
+	var (
+		actualposeI interface{}
+		err         error
+		actualpose  []float64
+	)
+	toolVectorActual := rCFormat["Tool vector actual"]
+	begin := toolVectorActual.BeginIndex
+	end := toolVectorActual.BeginIndex + toolVectorActual.DataSize
+	if len(data) < end {
+		return nil, fmt.Errorf("Error: data length: %d less than toolVectorActual end index: %d", len(data), end)
+	}
+	toolVectorActual.SetData(data[begin:end])
+
+	if actualposeI, err = toolVectorActual.Output(); err != nil {
+		return nil, err
+	}
+
+	// 轉換型別
+	switch actualposeI.(type) {
+	case []float64:
+		actualpose = actualposeI.([]float64)
+		if len(actualpose) != toolVectorActual.NumberOfValues {
+			return nil, fmt.Errorf("Error: actualpose is not match toolVectorActual.NumberOfValues")
+		}
+		return actualpose, nil
+	default:
+		return nil, fmt.Errorf("Error: target interface type is not a []float64")
+	}
+
 }

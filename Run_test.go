@@ -20,7 +20,7 @@ func TestRunMoveJ(t *testing.T) {
 	}
 	defer conn.Close()
 	cf := CommunicationsFloat64{
-		Z: 0.06,
+		Z: -0.06,
 	}
 	if targetPose, err = RunURWithMoveJ(rCFormat, conn, cf, timeout); err != nil {
 		t.Error(err)
@@ -34,6 +34,5 @@ func TestRunMoveJ(t *testing.T) {
 	if afterTime.Sub(beforeTime) >= timeout {
 		t.Error("Timeout")
 	}
-	t.Error(afterTime.Sub(beforeTime) / time.Millisecond)
 
 }
