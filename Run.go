@@ -57,14 +57,14 @@ func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, commun
 		actualpose []float64
 		str        string
 	)
-	if data, err = read(conn, rCFormat, timeout); err != nil {
+	if data, err = Read(conn, rCFormat, timeout); err != nil {
 		return nil, err
 	}
 
 	if actualpose, err = DecodeActualPose(rCFormat, data); err != nil {
 		return nil, err
 	}
-	actualpose = addCommunications(actualpose, communications)
+	actualpose = AddCommunications(actualpose, communications)
 	if str, err = Float64ToPose(actualpose); err != nil {
 		return nil, err
 	}
@@ -77,7 +77,8 @@ func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, commun
 	return actualpose, nil
 }
 
-func read(conn net.Conn, rCFormat RealtimeCommunicationsFormat, timeout time.Duration) ([]byte, error) {
+// Read Read UR data with remote control protocol
+func Read(conn net.Conn, rCFormat RealtimeCommunicationsFormat, timeout time.Duration) ([]byte, error) {
 	var (
 		dataLen         int
 		err             error
@@ -134,7 +135,8 @@ func read(conn net.Conn, rCFormat RealtimeCommunicationsFormat, timeout time.Dur
 	return data, nil
 }
 
-func addCommunications(currently []float64, communications CommunicationsFloat64) []float64 {
+// AddCommunications Add communications
+func AddCommunications(currently []float64, communications CommunicationsFloat64) []float64 {
 	if len(currently) != 6 {
 		return nil
 	}

@@ -20,7 +20,7 @@ func WaitMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, targetPose 
 		done <- true
 	}()
 	for {
-		if data, err = read(conn, rCFormat, timeout); err != nil {
+		if data, err = Read(conn, rCFormat, timeout); err != nil {
 			return err
 		}
 		begin := toolVectorActual.BeginIndex
