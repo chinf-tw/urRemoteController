@@ -82,15 +82,9 @@ func RunURWithMoveJ(rCFormat RealtimeCommunicationsFormat, conn net.Conn, commun
 		return nil, fmt.Errorf("Error: target interface type is not a []float64")
 	}
 
-	for _, f := range actualpose {
-		s := strconv.FormatFloat(f, 'f', -1, 64)
-		if err != nil {
-			return nil, err
-		}
-		str += s + ","
+	if str, err = Float64ToPose(actualpose); err != nil {
+		return nil, err
 	}
-	str = str[:len(str)-1]
-	str += "]"
 
 	moveStr := fmt.Sprintf("movej(%s)\n", str)
 	if _, err := conn.Write([]byte(moveStr)); err != nil {
@@ -168,4 +162,22 @@ func addCommunications(currently []float64, communications CommunicationsFloat64
 	currently[4] += communications.RY
 	currently[5] += communications.RZ
 	return currently
+}
+
+// Float64ToPose Convert float list to UR pose
+func Float64ToPose(target []float64) (string, error) {
+	var (
+		err error
+		str string
+	)
+	for _, f := range target {
+		s := strconv.FormatFloat(f, 'f', -1, 64)
+		if err != nil {
+			return "", err
+		}
+		str += s + ","
+	}
+	str = str[:len(str)-1]
+	str += "]"
+	return str, nil
 }
