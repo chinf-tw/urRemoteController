@@ -170,6 +170,7 @@ func Float64ToPose(target []float64) (string, error) {
 		err error
 		str string
 	)
+	str = "p["
 	for _, f := range target {
 		s := strconv.FormatFloat(f, 'f', -1, 64)
 		if err != nil {
